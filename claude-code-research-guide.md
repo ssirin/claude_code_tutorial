@@ -890,8 +890,6 @@ The approach described here is different. It is **stateful and compounding**:
 - Your own analyses and queries file back into the knowledge base and improve future queries.
 - Six months of work results in a private corpus your LLM can read in a single context window.
 
-For energy economics researchers, this means your knowledge about electricity market mechanisms, capacity auction designs, renewable integration challenges, and empirical findings across regions never disappears — it compounds.
-
 ### 14.2 The Four Layers
 
 The stack has four distinct layers, each with a specific role. Understanding the boundary between layers is important: Claude Code reads from the raw layer but never modifies it; you read from the wiki but rarely write to it directly. Keeping these roles clean ensures the system remains organised as it scales.
