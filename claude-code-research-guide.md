@@ -1,4 +1,4 @@
-# Claude Code for Research - A Comprehensive Implementation Guide
+# Claude Code for Research - Implementation Guide
 ### For Energy Economics & Quantitative Research
 **SMS | Riyadh, 2025–2026**
 
