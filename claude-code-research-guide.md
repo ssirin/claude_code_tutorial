@@ -4,7 +4,7 @@
 
 *Based on: Korinek, A. (2025). AI Agents for Economic Research. NBER Working Paper No. 34202.
 AI MBA Webinar Series on Claude Code for Economists (Panjwani, 2025).
-Karpathy, A. (2026). LLM Knowledge Bases. X/Twitter thread.
+Karpathy, A. (2026). LLM Knowledge Bases. 
 Phelan, A. (2023). An Updated Academic Workflow: Zotero & Obsidian. Medium.*
 
 ---
