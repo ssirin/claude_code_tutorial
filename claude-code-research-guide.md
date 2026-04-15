@@ -1,6 +1,6 @@
 # Claude Code for Research - Implementation Guide
 ### Energy Economics & Quantitative Research
-**SMS | Riyadh, 2025–2026**
+**SMS | Riyadh,  2026**
 
 *Based on: Korinek, A. (2025). AI Agents for Economic Research. NBER Working Paper No. 34202.
 AI MBA Webinar Series on Claude Code for Economists (Panjwani, 2025).
