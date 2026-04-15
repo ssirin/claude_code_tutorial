@@ -2,7 +2,7 @@
 ## A Comprehensive Implementation Guide
 ### For Energy Economics & Quantitative Research
 **Selahattin Murat Sirin | Riyadh,  2025â€“2026**
-#### Disclaimer: Use of this website and its information is strictly at your own risk.
+
 ---
 
 ## Table of Contents
@@ -1251,3 +1251,5 @@ $20/month is enough to start. $200/month unlocks meaningfully faster iteration â
 
 *SMS | Claude Code for Research*
 *Based on Korinek (2025) NBER WP 34202, Karpathy (2026) LLM Knowledge Bases, Phelan (2023) Zotero & Obsidian Workflow, and AI MBA Webinar Series*
+
+#### Disclaimer: Use of this website and its information is strictly at your own risk.
