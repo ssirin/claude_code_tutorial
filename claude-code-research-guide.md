@@ -1,7 +1,7 @@
 # Claude Code for Research
 ## A Comprehensive Implementation Guide
 ### For Energy Economics & Quantitative Research
-**Riyadh | 2025–2026**
+**Selahattin Murat Sirin | Riyadh,  2025–2026**
 Disclaimer: Use of this website and its information is strictly at your own risk.
 ---
 
@@ -775,7 +775,8 @@ overview of [your research topic].
 
 This section describes a powerful, integrated workflow for managing research knowledge across multiple papers and topics over time. It combines four tools — Zotero, Obsidian, NotebookLM, and Claude Code — each doing what it does best.
 
-The core idea comes from Andrej Karpathy (former OpenAI, Tesla AI Director), who described shifting a large fraction of his LLM usage from writing code to **manipulating knowledge stored as markdown files**. The mental shift is simple but profound: instead of using Claude as a chatbot you ask questions and forget, you use it as a **compiler and librarian** that builds a persistent, compounding knowledge base on your behalf.
+The core idea comes from Andrej Karpathy (former OpenAI, Tesla AI Director), who described shifting a large fraction of his LLM usage from writing code to **manipulating knowledge stored as markdown files**. The mental shift is simple but profound: instead of using Claude as a chatbot you ask questions and forget, you use it as a **compiler and librarian** that builds a persistent, compounding knowledge base on your behalf. Moreover, 
+Alexandra Phelan's ideas have been helpful in preparing this section [https://medium.com/@alexandraphelan/an-updated-academic-workflow-zotero-obsidian-cffef080addd](https://medium.com/@alexandraphelan)
 
 ### 14.1 Why This Approach Matters for Researchers
 
@@ -1248,5 +1249,5 @@ $20/month is enough to start. $200/month unlocks meaningfully faster iteration �
 
 *End of Implementation Guide*
 
-*KAPSARC Energy Economics Research | Claude Code for Research*
+*SMS | Claude Code for Research*
 *Based on Korinek (2025) NBER WP 34202, Karpathy (2026) LLM Knowledge Bases, Phelan (2023) Zotero & Obsidian Workflow, and AI MBA Webinar Series*
