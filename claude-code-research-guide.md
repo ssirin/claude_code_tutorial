@@ -2,7 +2,7 @@
 ## A Comprehensive Implementation Guide
 ### For Energy Economics & Quantitative Research
 **Selahattin Murat Sirin | Riyadh,  2025–2026**
-Disclaimer: Use of this website and its information is strictly at your own risk.
+#### Disclaimer: Use of this website and its information is strictly at your own risk.
 ---
 
 ## Table of Contents
