@@ -1858,4 +1858,3 @@ Even with a well-configured setup, things occasionally go wrong. The table below
 
 #### Disclaimer: Use of this guide and any associated tools is strictly at your own risk.
 
-#### Disclaimer: Use of this guide and any associated tools is strictly at your own risk.
