@@ -24,11 +24,12 @@ Phelan, A. (2023). An Updated Academic Workflow: Zotero & Obsidian. Medium.*
 11. [Publication-Quality Figures: Healy Style Guide](#11-publication-quality-figures-healy-style-guide)
 12. [Subagents: Specialised AI Teammates](#12-subagents-specialised-ai-teammates)
 13. [Installing Third-Party Agents](#13-installing-third-party-agents)
-14. [The Knowledge Management Stack: Zotero, Obsidian, NotebookLM & Claude Code](#14-the-knowledge-management-stack-zotero-obsidian-notebooklm--claude-code)
-15. [AI Paradigms for Research (Korinek, 2025)](#15-ai-paradigms-for-research-korinek-2025)
-16. [Critical Limitations & Responsible Oversight](#16-critical-limitations--responsible-oversight)
-17. [Best Practices Summary](#17-best-practices-summary)
-18. [Troubleshooting](#18-troubleshooting)
+14. [Skills: Reusable AI Playbooks for Research](#14-skills-reusable-ai-playbooks-for-research)
+15. [The Knowledge Management Stack: Zotero, Obsidian, NotebookLM & Claude Code](#15-the-knowledge-management-stack-zotero-obsidian-notebooklm--claude-code)
+16. [AI Paradigms for Research (Korinek, 2025)](#16-ai-paradigms-for-research-korinek-2025)
+17. [Critical Limitations & Responsible Oversight](#17-critical-limitations--responsible-oversight)
+18. [Best Practices Summary](#18-best-practices-summary)
+19. [Troubleshooting](#19-troubleshooting)
 
 ---
 
@@ -414,7 +415,7 @@ Settings are layered, with lower levels overriding higher ones. Organisation-lev
 | Project | `.claude/settings.json` — committed to Git and shared with collaborators |
 | Local | `.claude/settings.local.json` — machine-specific overrides, never committed |
 
-### 5.2 Tool-Based Access Controls
+### 6.2 Tool-Based Access Controls
 
 The permissions block in your settings file is where you define what Claude Code is allowed to do without asking, what it should ask confirmation for, and what it must never do. For a research project, a sensible default is to allow routine operations (running Python scripts, using Git, fetching data from approved sources) and to require confirmation for anything irreversible (deleting files, running arbitrary network requests). The example below is calibrated for energy economics data workflows, where fetching data from EIA or national regulators is routine but unrestricted `sudo` commands would be dangerous.
 
@@ -873,13 +874,517 @@ overview of [your research topic].
 
 ---
 
-## 14. The Knowledge Management Stack: Zotero, Obsidian, NotebookLM & Claude Code
+---
+
+## 14. Skills: Reusable AI Playbooks for Research
+
+One of the most powerful but least understood features of Claude Code — and modern AI tools in general — is the ability to give Claude a persistent, reusable set of instructions that it applies consistently across sessions, projects, and even across different AI platforms. These are called **Skills**. Unlike a one-off prompt that disappears when you close the chat, a skill is a structured file that encodes a methodology, a workflow, or a set of domain-specific rules once, and then makes that encoded expertise available on demand every time you need it.
+
+Skills were introduced by Anthropic in October 2025 and formalised as an open standard at [agentskills.io](https://agentskills.io/) in December 2025. They are now supported across Claude, ChatGPT, GitHub Copilot, Cursor, and other AI tools. A skill you write once works across platforms, which means your investment in writing a good skill pays off regardless of which AI tool you happen to be using for a given task.
+
+### 14.1 What Is a Skill?
+
+A skill is a plain Markdown file — typically named `SKILL.md` — that contains two parts: a short YAML header that tells the AI *when* to use the skill, and a Markdown body that tells it *how* to perform the task. The best analogy is a detailed rubric or style guide written for a human colleague, except the reader is an AI assistant. When the skill is loaded, Claude reads it and applies its methodology automatically whenever you ask for the relevant type of task.
+
+It is worth being precise about how skills differ from the subagents described in Section 12. A subagent is an isolated AI worker that runs a task in a separate context window and returns a result. A skill, by contrast, shapes how Claude behaves in the *current* conversation — it changes Claude's approach, methodology, and output format rather than creating a separate task runner. The practical consequence is this: you use a skill when you want Claude to apply a specific, repeatable methodology to something you are working on right now (reviewing a draft, structuring an argument, validating a data source); you use a subagent when you want to delegate a bounded task entirely and receive a finished output back.
+
+| Feature | Skill | Subagent |
+|---|---|---|
+| What it does | Changes how Claude behaves in the current session | Runs a task in an isolated context window |
+| Analogy | A style guide or rubric | A team member assigned a specific job |
+| Activation | Triggered by topic or explicit request | Invoked explicitly or by description match |
+| Context | Shared with the main session | Isolated — results only are returned |
+| Best for | Applying a consistent methodology | Delegating a bounded, self-contained task |
+
+### 14.2 The Skill File Format
+
+Every skill is a Markdown file structured as follows. The YAML frontmatter (between the `---` delimiters) defines the metadata that Claude uses to identify and load the skill. The body defines what Claude should actually do.
+
+```markdown
+---
+name: skill-name-lowercase-hyphenated
+description: >
+  One or two sentences describing when to use this skill and what it does.
+  Claude reads this to decide whether to activate the skill for a given request.
+license: CC BY 4.0
+---
+
+# Skill Title
+
+## Overview
+
+A short paragraph describing the skill's purpose and the problem it solves.
+
+**Keywords**: keyword1, keyword2, keyword3
+
+## Instructions
+
+Step-by-step instructions for Claude:
+1. First action
+2. Second action
+3. Third action
+
+## Output Format
+
+- What the output should look like
+- Structure, length, sections
+
+## Constraints
+
+- What the skill must never do
+- Any hard limits on scope or behaviour
+```
+
+The `description` field is the most important part of the YAML header. It is what Claude reads to determine whether the skill is relevant to a given request. Write it as a trigger condition: "Use this skill when the user asks to review a manuscript for writing clarity" is more effective than "This skill helps with writing."
+
+### 14.3 How to Install a Skill in Claude Code
+
+In Claude Code, skills are stored as files in a `.claude/skills/` subfolder inside your project directory. Each skill lives in its own named subfolder, which allows you to group skills by domain and include companion files (examples, reference data, glossaries) alongside the main `SKILL.md`.
+
+#### Project-Level Installation (recommended for research projects)
+
+```bash
+# Create the skills directory
+mkdir -p .claude/skills/manuscript-review
+
+# Place the skill file there
+cp manuscript-review/SKILL.md .claude/skills/manuscript-review/SKILL.md
+```
+
+Once the file is in place, launch Claude Code from your project root and the skill is automatically available. You do not need to do anything special to activate it — simply ask Claude to perform the task the skill covers:
+
+```
+Review the writing in my Introduction section for passive voice and clutter:
+[paste your text]
+```
+
+Claude will recognise that a relevant skill is available and apply its methodology automatically.
+
+#### User-Level Installation (available across all projects)
+
+For skills you want available in every project — a manuscript reviewer, a data documentation standard, a citation formatter — install them in your user-level Claude Code configuration:
+
+```bash
+mkdir -p ~/.claude/skills/manuscript-review
+cp SKILL.md ~/.claude/skills/manuscript-review/SKILL.md
+```
+
+### 14.4 How to Install a Skill in Claude.ai
+
+For researchers who use the Claude.ai web interface rather than (or alongside) Claude Code, skills can be installed account-wide through the Customize panel, making them available in all conversations.
+
+**Option A — Account-wide installation (recommended)**
+
+This makes the skill available everywhere: in claude.ai conversations, in Claude's Cowork desktop agent, and in new Projects.
+
+1. Package your skill folder as a ZIP file. The ZIP must contain the skill folder at the root level (e.g., `manuscript-review/SKILL.md`), not a loose `SKILL.md` file.
+2. Open [claude.ai](https://claude.ai/). In the left sidebar, click **Customize** (the toolbox icon) → **Skills**.
+3. Click the **+** button → **+ Create skill** → upload the ZIP file.
+4. The skill appears in your Skills list. Ensure its toggle is turned on.
+5. Start any conversation and ask Claude to perform the task. It will recognise the skill and apply it automatically.
+
+**Option B — Project-specific installation**
+
+This scopes the skill to a single Claude.ai Project, which is useful when a skill's conventions apply only to one manuscript or one research project.
+
+1. Open or create a **Project** in claude.ai.
+2. In the Project's knowledge base, click **Add content** and upload the `SKILL.md` file directly (no ZIP required).
+3. Start a conversation inside that Project. The skill is active for all conversations in that Project.
+
+### 14.5 Using Skills Across Platforms
+
+Because Agent Skills is an open standard, the same `SKILL.md` file you created for Claude can be adapted for use in ChatGPT and Google Gemini. This matters for researchers who collaborate with people using different AI tools — you write the methodology once and share it in a format that anyone can use.
+
+**ChatGPT (Custom GPT)**
+
+1. Open the `SKILL.md` file and copy everything below the closing `---` of the YAML header (i.e., the full Markdown body).
+2. Go to chat.openai.com → profile icon → **My GPTs** → **Create a GPT**.
+3. In the **Configure** tab, paste the skill body into the **Instructions** field. Add the `description` value from the YAML header at the very top so the GPT knows its purpose.
+4. Name the GPT after the skill (e.g., "Manuscript Reviewer") and save.
+
+**Google Gemini (Gem)**
+
+1. Open [gemini.google.com](https://gemini.google.com/) → navigate to **Gems**.
+2. Create a new Gem. In the instructions field, paste the full body of the `SKILL.md` file (everything after the YAML header).
+3. Save the Gem and use it whenever you need the skill's methodology.
+
+### 14.6 Ready-to-Use Research Skills
+
+The following skills are ready to copy into your `.claude/skills/` folder. Each is designed for a recurring task in academic economics research. They can be used as-is or customised with journal-specific conventions, field-specific terminology, or your personal style preferences.
+
+---
+
+#### Skill 1: Manuscript Writing Reviewer
+
+This skill applies the methodology from Dr. Kristin Sainani's *Writing in the Sciences* course at Stanford. It performs five sequential editorial passes on your manuscript text: clutter extraction, voice and verb vitality, sentence architecture, keyword consistency, and numerical and citation integrity. It improves how your arguments are delivered without altering their content or technical claims.
+
+```markdown
+---
+name: manuscript-writing-reviewer
+description: >
+  Use this skill when asked to review, edit, or improve the writing
+  quality of a manuscript, paper draft, abstract, or any academic text.
+  Applies a five-pass editorial review based on scientific writing
+  best practices.
+license: CC BY 4.0
+---
+
+# Manuscript Writing Reviewer
+
+## Overview
+
+Performs a structured editorial review of scientific writing, improving
+clarity, concision, and persuasiveness without altering technical content.
+
+**Keywords**: writing, manuscript, editing, passive voice, clutter, clarity,
+academic writing, scientific writing
+
+## Review Modes
+
+- **Full review**: runs all five passes in sequence
+- **Section review**: reviews a single section (intro, methods, results, discussion)
+- **Targeted review**: runs only the pass you specify (e.g., "fix passive voice only")
+- **Interactive**: reviews paragraph by paragraph with before/after examples
+
+## Instructions
+
+When invoked, ask the user which review mode they want if not specified.
+Then apply the following passes in order (or only the requested pass):
+
+### Pass 1 — Clutter Extraction
+- Flag dead-weight phrases (e.g., "it is important to note that", "due to the fact that")
+- Remove unnecessary jargon and filler language
+- Provide a concise replacement for each flagged phrase
+
+### Pass 2 — Voice and Verb Vitality
+- Identify passive constructions and suggest active alternatives
+- Find smothered verbs / nominalizations (e.g., "conduct an analysis of" → "analyse")
+- Flag weak verb choices ("is", "are", "have") and suggest stronger verbs
+
+### Pass 3 — Sentence Architecture
+- Flag run-on sentences (>40 words) and suggest how to split them
+- Identify misplaced modifiers and dangling clauses
+- Check that each paragraph has a clear topic sentence and logical progression
+
+### Pass 4 — Keyword Consistency
+- Identify key technical terms used in the text
+- Check that each term is used consistently (flag synonyms that create ambiguity)
+- Note where abbreviations are introduced and whether they are used consistently
+
+### Pass 5 — Numerical and Citation Integrity
+- Flag numbers that appear inconsistently across text, tables, and figures
+- Check that all in-text citations have a corresponding reference
+- Flag missing units on numerical values
+
+## Output Format
+
+For each pass, produce:
+- A severity tag: [CRITICAL], [MODERATE], or [MINOR]
+- The original text (quoted)
+- The specific issue identified
+- A suggested revision
+
+End with a brief paragraph-level summary of the most important improvements needed.
+
+## Constraints
+
+- Do not alter scientific content, data interpretations, or technical claims
+- Do not change the author's argument — only how it is expressed
+- Do not flag field-standard terminology as jargon
+```
+
+---
+
+#### Skill 2: Deep Research Synthesizer
+
+This skill converts a set of notes, literature summaries, or raw reading material into a structured, publication-ready synthesis. It is most useful when you have read a group of papers on a topic and want to produce a literature review section or a background section for a manuscript.
+
+```markdown
+---
+name: deep-research-synthesizer
+description: >
+  Use this skill when asked to synthesise multiple sources, produce a
+  literature review, or organise findings from several papers into a
+  coherent, structured narrative. Outputs a structured synthesis with
+  themes, evidence, and gaps identified.
+license: CC BY 4.0
+---
+
+# Deep Research Synthesizer
+
+## Overview
+
+Converts raw notes, paper summaries, or annotated reading lists into a
+structured, logically organised synthesis suitable for a literature
+review or background section.
+
+**Keywords**: synthesis, literature review, research, thematic analysis,
+background, structured narrative
+
+## Instructions
+
+1. Read all provided source material carefully
+2. Identify the 3-6 main themes across the sources
+3. For each theme:
+   - State the consensus finding (with citations)
+   - Note any contradictions or ongoing debates
+   - Identify what remains unknown or contested
+4. Identify the most significant gap in the literature that your research addresses
+5. Write the synthesis in flowing paragraphs, not a paper-by-paper summary
+
+## Output Format
+
+- **Thematic structure**: one subsection per major theme
+- **In-text citations**: use [@Author_YYYY] format
+- **Gap statement**: a final paragraph identifying the key gap
+- **Length**: 400–800 words unless specified otherwise
+
+## Constraints
+
+- Never produce a paper-by-paper summary ("Smith (2020) found X. Jones (2021) found Y")
+- Always integrate findings across sources within each thematic paragraph
+- Do not invent citations; use only sources explicitly provided
+```
+
+---
+
+#### Skill 3: Source Validation and Credibility Checker
+
+This skill evaluates the quality and credibility of sources before you cite them. It is particularly useful when working with grey literature (policy reports, working papers, news articles) or when a Claude Code web search has returned sources of uncertain quality.
+
+```markdown
+---
+name: source-validation-skill
+description: >
+  Use this skill when asked to evaluate, validate, or assess the
+  credibility and reliability of information sources, references,
+  or data claims. Returns a structured credibility assessment.
+license: CC BY 4.0
+---
+
+# Source Validation and Credibility Checker
+
+## Overview
+
+Evaluates sources for reliability, relevance, recency, and potential
+bias. Particularly useful for grey literature, policy reports, and
+web-sourced information.
+
+**Keywords**: source validation, credibility, bias, reliability, citations,
+fact-checking, peer review
+
+## Instructions
+
+For each source provided, assess the following dimensions:
+
+1. **Authority**: Who produced this? What are their credentials or institutional affiliation?
+2. **Publication type**: Peer-reviewed journal / working paper / policy report / news / blog?
+3. **Recency**: Is the data or finding likely to have been superseded?
+4. **Methodology**: Is the methodology described transparently? Are sample sizes adequate?
+5. **Bias risk**: Does the producing institution have a financial or political stake in the finding?
+6. **Cross-verification**: Does this finding appear in other independent sources?
+
+## Output Format
+
+For each source:
+- **Credibility rating**: HIGH / MODERATE / LOW / UNVERIFIED
+- **Reasoning**: 2-3 sentences explaining the rating
+- **Recommended action**: Cite confidently / Cite with caveat / Verify against primary source / Do not cite
+
+## Constraints
+
+- Do not dismiss a source solely because it is not peer-reviewed
+- Policy reports from credible institutions (IEA, World Bank, IMF, national regulators) are valid sources
+- Always note when a source is the only evidence for a significant claim
+```
+
+---
+
+#### Skill 4: SCQA Paper Structure Framework
+
+The SCQA (Situation, Complication, Question, Answer) framework, widely used in consulting and policy writing, is equally powerful for structuring academic papers, conference presentations, and referee responses. This skill helps you apply SCQA logic to any piece of writing that needs a clearer argumentative structure.
+
+```markdown
+---
+name: scqa-structure-framework
+description: >
+  Use this skill when asked to structure, outline, or reorganise a
+  paper, presentation, abstract, or argument using the SCQA framework
+  (Situation, Complication, Question, Answer). Produces a clear logical
+  narrative from unstructured input.
+license: CC BY 4.0
+---
+
+# SCQA Paper Structure Framework
+
+## Overview
+
+Applies the Situation-Complication-Question-Answer framework to
+organise academic arguments into clear, logical, and persuasive
+narratives.
+
+**Keywords**: SCQA, structure, argument, outline, paper structure,
+introduction, abstract, narrative logic
+
+## Core Framework
+
+- **Situation**: What is the established context? What is already known?
+- **Complication**: What problem, puzzle, or gap disrupts the situation?
+- **Question**: What specific question does this complication raise?
+- **Answer**: What does this paper contribute as a response to that question?
+
+## Instructions
+
+1. Ask the user for the core content (notes, draft, or bullet points)
+2. Identify the established facts / context → assign to Situation
+3. Identify the problem, gap, or tension → assign to Complication
+4. Derive the research question naturally from the Complication
+5. Map the paper's contribution to the Answer
+6. Write a structured outline or prose draft following the SCQA sequence
+
+## Output Format
+
+- SCQA block (4 labelled sections, 2-4 sentences each)
+- Optional: full introduction draft following SCQA logic
+- Optional: abstract restructured in SCQA format
+
+## Constraints
+
+- The Complication must logically follow from the Situation
+- The Question must be answerable by the paper's actual contribution
+- The Answer should be specific — avoid generic "this paper fills a gap" language
+```
+
+---
+
+#### Skill 5: Data Documentation Standard
+
+Reproducible research requires that every dataset used in a paper is documented clearly enough that an independent researcher could locate, download, and process the same data. This skill generates a standardised data documentation block for each dataset in your project.
+
+```markdown
+---
+name: data-documentation-standard
+description: >
+  Use this skill when asked to document a dataset, write a data
+  appendix, describe a data source, or produce reproducible data
+  documentation. Outputs a structured documentation block following
+  reproducibility best practices.
+license: CC BY 4.0
+---
+
+# Data Documentation Standard
+
+## Overview
+
+Generates standardised, reproducible documentation for research datasets,
+following best practices for empirical economics research.
+
+**Keywords**: data documentation, reproducibility, data appendix, dataset,
+sources, methodology, replication
+
+## Instructions
+
+For each dataset described, produce a documentation block covering:
+
+1. **Dataset name and version**: official name, version number or vintage if applicable
+2. **Source**: organisation that produced the data, with full URL
+3. **Coverage**: time period, geographic scope, unit of observation
+4. **Access**: how to download or obtain (public/restricted; direct link or application process)
+5. **Download date**: when the data was accessed (use today's date if current)
+6. **Key variables used**: list the specific variables extracted for this study
+7. **Processing steps**: describe any cleaning, filtering, or transformation applied
+8. **File location in project**: path within the project folder structure
+
+## Output Format
+
+A structured block per dataset, formatted as a markdown table or
+a numbered list suitable for inclusion in a paper's Data Appendix section.
+
+## Constraints
+
+- Never assume download links are stable; always include the parent organisation URL as a fallback
+- Note when data requires registration or institutional access
+- Flag when the specific vintage used may differ from the current version
+```
+
+---
+
+### 14.7 Creating Your Own Skills
+
+You do not need to write skills from scratch. The most efficient approach is to describe the methodology you want to encode — either from a paper, a textbook, a course, or your own practice — and ask Claude to produce the `SKILL.md` file for you. This is the same meta-skill pattern used to create the SciWrite manuscript reviewer: the input was 30 lecture transcripts; the output was a fully formatted `SKILL.md` encoding the entire methodology.
+
+Here is the prompt pattern to use:
+
+```
+I want to create a SKILL.md file for Claude Code that encodes the following
+methodology: [describe the methodology or paste the source material].
+
+The skill should be triggered when I ask Claude to [trigger description].
+It should produce [output format].
+It must never [key constraint].
+
+Please produce a complete SKILL.md file following the Agent Skills standard
+format: YAML frontmatter with name and description fields, followed by
+a Markdown body with Overview, Instructions, Output Format, and Constraints sections.
+```
+
+Claude will produce a complete, ready-to-use `SKILL.md` file. You can then refine it by running it on a few real examples and adjusting the instructions where the output does not match your expectations. Skills improve through iteration — start simple and add detail as you encounter edge cases.
+
+### 14.8 Organising Your Skills Library
+
+As you accumulate skills, a consistent folder organisation prevents confusion and makes it easy to share your library with collaborators. The structure below separates skills by the phase of research they support.
+
+```
+.claude/skills/
+├── writing/
+│   ├── manuscript-reviewer/
+│   │   └── SKILL.md
+│   ├── scqa-framework/
+│   │   └── SKILL.md
+│   └── abstract-writer/
+│       └── SKILL.md
+├── research/
+│   ├── deep-research-synthesizer/
+│   │   └── SKILL.md
+│   ├── source-validation/
+│   │   └── SKILL.md
+│   └── literature-gap-identifier/
+│       └── SKILL.md
+├── data/
+│   ├── data-documentation/
+│   │   └── SKILL.md
+│   └── code-reviewer/
+│       └── SKILL.md
+└── communication/
+    ├── referee-response-drafter/
+    │   └── SKILL.md
+    └── policy-brief-writer/
+        └── SKILL.md
+```
+
+Commit the entire `.claude/skills/` folder to your Git repository. This means your skills travel with your project, are version-controlled, and are automatically available to any collaborator who clones the repository.
+
+### 14.9 Skills vs. CLAUDE.md vs. Subagents: When to Use Which
+
+After reading this section alongside Sections 4 and 12, it is natural to ask: when should I encode something in a skill, when in `CLAUDE.md`, and when in a subagent? The table below provides a practical decision guide.
+
+| Use case | Best mechanism | Reason |
+|---|---|---|
+| Methodology that applies to many different pieces of content (manuscript review, citation formatting) | **Skill** | Reusable, portable, self-contained, works across platforms |
+| Project-specific context, data sources, co-authors, model assumptions | **CLAUDE.md** | This is project state, not a methodology — it changes with the project |
+| A task you want to run autonomously and get a finished result back | **Subagent** | Subagents are isolated task runners; skills are methodological guides |
+| A standard that applies to all your projects (your personal writing style, your figure conventions) | **User-level skill** in `~/.claude/skills/` | Makes it available everywhere without per-project setup |
+| A convention that applies only to this project (journal style guide, field-specific notation) | **Project-level skill** in `.claude/skills/` | Scoped correctly; travels with the project |
+
+> **TIP:** If you find yourself pasting the same block of instructions into CLAUDE.md for every project — your preferred citation style, your manuscript review checklist, your data documentation requirements — that is a strong signal that the block should become a skill. Writing it as a skill means it is stored once, formatted correctly, and reusable across every project without copy-pasting.
+
+## 15. The Knowledge Management Stack: Zotero, Obsidian, NotebookLM & Claude Code
 
 This section describes a powerful, integrated workflow for managing research knowledge across multiple papers and topics over time. It combines four tools — Zotero, Obsidian, NotebookLM, and Claude Code — each doing what it does best.
 
 The core idea comes from Andrej Karpathy (former OpenAI, Tesla AI Director), who described shifting a large fraction of his LLM usage from writing code to **manipulating knowledge stored as markdown files**. The mental shift is simple but profound: instead of using Claude as a chatbot you ask questions and forget, you use it as a **compiler and librarian** that builds a persistent, compounding knowledge base on your behalf. Alexandra Phelan's detailed workflow guide for combining Zotero and Obsidian has also been influential in shaping the approach described here ([source](https://medium.com/@alexandraphelan/an-updated-academic-workflow-zotero-obsidian-cffef080addd)).
 
-### 14.1 Why This Approach Matters for Researchers
+### 15.1 Why This Approach Matters for Researchers
 
 Most researchers' experience with AI follows a frustrating pattern: you ask a question, get a good answer, close the tab, and lose everything. The next week you start from scratch. Nothing accumulates.
 
@@ -890,7 +1395,9 @@ The approach described here is different. It is **stateful and compounding**:
 - Your own analyses and queries file back into the knowledge base and improve future queries.
 - Six months of work results in a private corpus your LLM can read in a single context window.
 
-### 14.2 The Four Layers
+For energy economics researchers, this means your knowledge about electricity market mechanisms, capacity auction designs, renewable integration challenges, and empirical findings across regions never disappears — it compounds.
+
+### 15.2 The Four Layers
 
 The stack has four distinct layers, each with a specific role. Understanding the boundary between layers is important: Claude Code reads from the raw layer but never modifies it; you read from the wiki but rarely write to it directly. Keeping these roles clean ensures the system remains organised as it scales.
 
@@ -914,7 +1421,7 @@ The stack has four distinct layers, each with a specific role. Understanding the
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 14.3 Setting Up Zotero
+### 15.3 Setting Up Zotero
 
 Zotero is your primary reference manager. It stores all paper metadata, PDFs, and annotations, and generates consistent citation keys for use in manuscripts. Its role in this stack is to act as the trusted, authoritative source for all bibliographic information — every paper that enters your research pipeline goes through Zotero first.
 
@@ -949,7 +1456,7 @@ Since Zotero 6, you can read and annotate PDFs directly inside the app. A colour
 | 🟢 Green | Methodology note |
 | 🔵 Blue | Relevant to your specific research question |
 
-### 14.4 Setting Up Obsidian
+### 15.4 Setting Up Obsidian
 
 Obsidian is where your knowledge actually lives. Think of it not as a note-taking app, but as a **knowledge IDE** — a place where you can browse, navigate, and visualise everything you know about a topic. Because it stores all data as plain `.md` files on your local machine, it integrates seamlessly with Claude Code: any file Claude Code writes in your vault is immediately visible in Obsidian, and vice versa.
 
@@ -959,7 +1466,7 @@ Download from [obsidian.md](https://obsidian.md/). It is free for personal use a
 
 #### Step 2 — Create Your Vault with the Research Folder Structure
 
-A "vault" is simply a folder on your computer that Obsidian treats as its database. Create one with the structure below. The division between `raw/`, `wiki/`, `reports/`, and `literature-notes/` mirrors the four layers described in Section 14.2, making it easy for both you and Claude Code to know where everything should go.
+A "vault" is simply a folder on your computer that Obsidian treats as its database. Create one with the structure below. The division between `raw/`, `wiki/`, `reports/`, and `literature-notes/` mirrors the four layers described in Section 15.2, making it easy for both you and Claude Code to know where everything should go.
 
 ```
 my-research-vault/
@@ -993,13 +1500,13 @@ These four plugins transform Obsidian from a markdown editor into a research-gra
 
 #### Step 5 — Configure Zotero Integration
 
-In Obsidian Settings → Zotero Integration: set the **Citation format** to Pandoc (which produces `[@Author_Year]` citekeys compatible with LaTeX and Word exports), and point **BibTeX path** to the `.bib` file you exported from Zotero in Section 14.3. Then create a Literature Note template (Section 14.6) so that every imported paper follows a consistent structure.
+In Obsidian Settings → Zotero Integration: set the **Citation format** to Pandoc (which produces `[@Author_Year]` citekeys compatible with LaTeX and Word exports), and point **BibTeX path** to the `.bib` file you exported from Zotero in Section 15.3. Then create a Literature Note template (Section 15.6) so that every imported paper follows a consistent structure.
 
 #### Step 6 — Enable Graph View
 
 Obsidian's graph view shows all your notes as nodes with bidirectional links as edges. As your wiki grows, knowledge clusters become visible: a dense cluster around "capacity market design" that links to papers, methodology notes, and reports. Isolated nodes — notes with no inbound links — indicate gaps: concepts you have mentioned but not fully developed. Use the graph view at least weekly to guide what to read next and what wiki pages need more attention.
 
-### 14.5 Setting Up NotebookLM
+### 15.5 Setting Up NotebookLM
 
 NotebookLM is a Google tool that excels at one specific task: rapidly synthesising a large batch of sources into a coherent narrative document. While Claude Code is better suited to the careful, one-at-a-time incremental maintenance of your wiki, NotebookLM is the right tool when you are starting a new research sub-topic and have 20–40 papers to review. Think of it as the batched initialisation step — you use NotebookLM to get oriented across a literature quickly, then hand that synthesis to Claude Code for integration into your persistent knowledge base.
 
@@ -1033,7 +1540,7 @@ concept pages in /wiki/concepts/ for each. Update /wiki/index.md accordingly.
 Show me every file you touched." --allowedTools Bash,Write,Read
 ```
 
-### 14.6 Creating Zotero Literature Notes in Obsidian
+### 15.6 Creating Zotero Literature Notes in Obsidian
 
 A Literature Note is a single Obsidian page for each paper in your Zotero library. It is generated automatically by the Zotero Integration plugin and contains the full metadata, an abstract, a direct link back to the Zotero record, and all your PDF annotations grouped by colour. Rather than scattered highlights that live only inside the PDF, your annotations become searchable, linkable markdown text — part of the same knowledge graph as your wiki pages and your manuscript drafts.
 
@@ -1104,7 +1611,7 @@ The setup creates a clean, unambiguous distinction between citing a paper and li
 
 This means every paper you cite in a manuscript draft has a corresponding Literature Note you can navigate to in one click, and every Literature Note automatically appears in Obsidian's graph view as a connected node.
 
-### 14.7 Setting Up the Claude Code + Obsidian Connection via MCP
+### 15.7 Setting Up the Claude Code + Obsidian Connection via MCP
 
 While you can use Claude Code with your vault by simply pointing it at the vault folder in the terminal, an MCP connection allows Claude to interact with Obsidian's internal APIs in real time — reading notes, writing new pages, appending under specific headings, and searching across the vault — all from within a Claude chat session, without touching the terminal at all. This is useful for quick, interactive knowledge management tasks that do not warrant a full Claude Code session.
 
@@ -1154,7 +1661,7 @@ In a Claude chat window, type: `Use Obsidian to list files in my vault.` If the 
 | Append to a note | "Append today's reading notes to raw/notes-2026-04-15.md" |
 | Create new wiki pages | "Create a new concept page for 'scarcity pricing' in wiki/concepts/" |
 
-### 14.8 The Daily Workflow: Putting It All Together
+### 15.8 The Daily Workflow: Putting It All Together
 
 A knowledge management system is only as valuable as the habits that feed it. The daily workflow below is designed to be low-friction: most of the organisational work is delegated to Claude Code, so your job is simply to capture, read, and ask good questions.
 
@@ -1207,7 +1714,7 @@ Write a health report to /wiki/lint-report.md with specific fixes."
 --allowedTools Bash,Write,Read
 ```
 
-### 14.9 The Schema File (CLAUDE.md in the Vault)
+### 15.9 The Schema File (CLAUDE.md in the Vault)
 
 The `CLAUDE.md` file at the root of your vault is the operating manual for Claude's knowledge management work. Without it, Claude starts each session with no understanding of your folder conventions, citekey format, or domain context. With a well-maintained `CLAUDE.md`, Claude can navigate your vault, maintain consistent conventions, and produce outputs that integrate cleanly with everything already there. Update this file whenever you add a new section type to the wiki or change a naming convention.
 
@@ -1247,7 +1754,7 @@ capacity mechanisms, energy transition economics, empirical IO methods.
 Primary region of focus: MENA and Gulf energy markets.
 ```
 
-### 14.10 An Example: Energy Economics Research in Practice
+### 15.10 An Example: Energy Economics Research in Practice
 
 To make this concrete, here is what the setup looks like for a researcher studying capacity market design in the Gulf. After setting up the vault and running the stack for one month, the `wiki/concepts/` folder might contain files such as:
 
@@ -1261,7 +1768,7 @@ When you then ask: *"What does my research say about the relationship between ca
 
 ---
 
-## 15. AI Paradigms for Research (Korinek, 2025)
+## 16. AI Paradigms for Research (Korinek, 2025)
 
 Not all research tasks are suited to the same type of AI tool. Anton Korinek's NBER working paper on AI agents for economic research provides a useful taxonomy of three paradigms, each suited to different phases of the research workflow. Understanding which paradigm fits your current task helps you choose the right tool and set realistic expectations for what it can and cannot do. For most researchers, the workflow in this guide spans all three: drafting and editing uses traditional LLMs; formal derivations and debugging use reasoning models; and the agentic workflows described here use Claude Code as an agentic chatbot.
 
@@ -1273,7 +1780,7 @@ Not all research tasks are suited to the same type of AI tool. Anton Korinek's N
 | Reasoning Models | Mathematical derivations, formal proofs, complex code debugging |
 | Agentic Chatbots | End-to-end workflows: data download → analysis → figures → narrative |
 
-### 15.1 Tool Budget
+### 16.1 Tool Budget
 
 The question of how much to spend on AI tools is a question of how to value your time. A researcher who spends three hours on a data cleaning task that Claude Code could complete in fifteen minutes has effectively paid a high cost for something that is very cheap to delegate. The figures below are approximate as of 2025–2026 and are intended as a starting point.
 
@@ -1281,7 +1788,7 @@ $20/month provides access to Claude.ai Pro and covers moderate daily use, includ
 
 ---
 
-## 16. Critical Limitations & Responsible Oversight
+## 17. Critical Limitations & Responsible Oversight
 
 AI tools are powerful research accelerators, but they introduce specific failure modes that do not arise with traditional research software. The most dangerous of these is **confident hallucination**: unlike a Python script, which either runs correctly or raises an error, a language model will produce a plausible-sounding but incorrect answer without any indication that something has gone wrong. This means that every factual claim, every citation, and every statistical result produced or referenced by Claude Code requires human verification before it appears in a manuscript. The table below catalogues the most common failure modes in research use and describes the mitigations that reduce (but do not eliminate) each risk.
 
@@ -1299,7 +1806,7 @@ AI tools are powerful research accelerators, but they introduce specific failure
 
 ---
 
-## 17. Best Practices Summary
+## 18. Best Practices Summary
 
 The practices below distil the most important lessons from experienced Claude Code users into a single reference. They are not rules to follow rigidly, but habits to build gradually. If you are new to this workflow, the highest-return habits to start with are: writing a thorough `CLAUDE.md`, using `plan.md` to open every session, and committing after every session. The knowledge management habits — keeping the vault `CLAUDE.md` current, running weekly lint passes, filing query outputs back into the wiki — become valuable later, once the knowledge base is large enough that compounding effects start to show.
 
@@ -1322,7 +1829,7 @@ The practices below distil the most important lessons from experienced Claude Co
 
 ---
 
-## 18. Troubleshooting
+## 19. Troubleshooting
 
 Even with a well-configured setup, things occasionally go wrong. The table below covers the most common problems encountered when using Claude Code for research and provides specific, actionable resolutions. When an issue is not on this list, the most productive debugging approach is to check `/status` first (to see the current session state), then check the relevant configuration file, then try isolating the problem by testing a simpler version of the same command. Most issues have a straightforward fix once the root cause is identified.
 
@@ -1348,5 +1855,7 @@ Even with a well-configured setup, things occasionally go wrong. The table below
 
 *SMS | Claude Code for Research*
 *Based on Korinek (2025) NBER WP 34202, Karpathy (2026) LLM Knowledge Bases, Phelan (2023) Zotero & Obsidian Workflow, and AI MBA Webinar Series*
+
+#### Disclaimer: Use of this guide and any associated tools is strictly at your own risk.
 
 #### Disclaimer: Use of this guide and any associated tools is strictly at your own risk.
