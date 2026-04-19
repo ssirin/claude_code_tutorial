@@ -1549,51 +1549,69 @@ A Literature Note is a single Obsidian page for each paper in your Zotero librar
 Save this template as `literature-notes/_template.md` in your vault. (Copy-paste into a plain text editor first to remove any hidden formatting before pasting into Obsidian.)
 
 ```
+## category: literaturenote tags: {% if allTags %}{{allTags}}{% endif %} citekey: {{citekey}} status: unread dateread:
+
+> [!Cite] {{bibliography}}
+
+## Synthesis
+**Contribution:**
+**Related:**
+
+> {% for relation in relations | selectattr("citekey") %}@{{relation.citekey}}{% if not loop.last %}, {% endif %}{% endfor %}
 ---
-category: literaturenote
-tags: {% if allTags %}{{allTags}}{% endif %}
-citekey: {{citekey}}
-status: unread
-dateread:
+
+## Metadata
+{% for type, creators in creators | groupby("creatorType") -%} {%- for creator in creators -%}
+
+> **{{ "First" if loop.first }}{{type | capitalize}}:** {%- if creator.name %} {{creator.name}}{%- else %} {{creator.lastName}}, {{creator.firstName}}{%- endif %} {% endfor %} {%- endfor %} **Title:** {{title}} **Year:** {{date | format("YYYY")}} **Citekey:** {{citekey}} {%- if itemType %} **Item Type:** {{itemType}} {%- endif %} {%- if itemType == "journalArticle" %} **Journal:** {{publicationTitle}} {%- endif %} {%- if itemType == "bookSection" %} **Book:** {{publicationTitle}} {%- endif %} {%- if volume %} **Volume:** {{volume}} {%- endif %} {%- if issue %} **Issue:** {{issue}} {%- endif %} {%- if publisher %} **Publisher:** {{publisher}} {%- endif %} {%- if place %} **Location:** {{place}} {%- endif %} {%- if pages %} **Pages:** {{pages}} {%- endif %} {%- if DOI %} **DOI:** {{DOI}} {%- endif %} {%- if ISBN %} **ISBN:** {{ISBN}} {%- endif %}
+
 ---
 
-> [!Cite]
-> {{bibliography}}
+## Links
 
->[!Synth]
->**Contribution**::
->
->**Related**:: {% for relation in relations | selectattr("citekey") %} [[@{{relation.citekey}}]]{% endfor %}
+> [!LINK] {%- for attachment in attachments | filterby("path", "endswith", ".pdf") %} [{{attachment.title}}](file://{{attachment.path | replace(" ", "%20")}}) {%- endfor %}
 
->[!md]
-{% for type, creators in creators | groupby("creatorType") -%}
-{%- for creator in creators -%}
-> **{{"First" if loop.first}}{{type | capitalize}}**::
-{%- if creator.name %} {{creator.name}}
-{%- else %} {{creator.lastName}}, {{creator.firstName}}
-{%- endif %}
-{% endfor %}~
-{%- endfor %}
-> **Title**:: {{title}}
-> **Year**:: {{date | format("YYYY")}}
-> **Citekey**:: {{citekey}}
-> **Journal**:: *{{publicationTitle}}*
+---
 
-> [!Abstract]
-> {{abstractNote}}
+## Abstract
 
-# Notes
+> [!Abstract] {%- if abstractNote %} {{abstractNote}} {%- endif %}
 
-# Annotations
-{% persist "annotations" %}
-{% set newAnnotations = annotations | filterby("date", "dateafter", lastImportDate) %}
-{% if newAnnotations.length > 0 %}
-### Imported: {{importDate | format("YYYY-MM-DD")}}
-{% for a in newAnnotations %}
-> {{a.annotatedText}}
-{% endfor %}
-{% endif %}
-{% endpersist %}
+---
+
+## Notes
+
+{%- if markdownNotes %} {{markdownNotes}} {%- endif %}
+
+---
+
+## Annotations
+
+{%- macro annotationColor(color) -%} {%- if color == "#ff6666" -%}red {%- elif color == "#f19837" -%}orange {%- elif color == "#ffd400" -%}yellow {%- elif color == "#5fb236" -%}green {%- elif color == "#2ea8e5" -%}blue {%- elif color == "#a28ae5" -%}purple {%- elif color == "#e56eee" -%}magenta {%- elif color == "#aaaaaa" -%}grey {%- else -%}yellow {%- endif -%} {%- endmacro -%}
+
+{%- macro calloutType(type) -%} {%- if type == "highlight" -%}quote {%- elif type == "text" -%}note {%- elif type == "image" -%}figure {%- else -%}note {%- endif -%} {%- endmacro -%}
+
+{% persist "annotations" %} {% set newAnnotations = annotations | filterby("date", "dateafter", lastImportDate) %} {% if newAnnotations.length > 0 %}
+
+### Imported: {{importDate | format("YYYY-MM-DD h:mm a")}}
+
+{% for a in newAnnotations %} {%- if a.type == "image" %}
+
+> [!figure] ![[{{a.imageRelativePath}}]] {%- if a.comment %} **Comment:** {{a.comment}} {%- endif %} [Page {{a.page}}](https://claude.ai/chat/%7B%7Ba.desktopURI%7D%7D)
+
+{%- elif a.type == "highlight" %}
+
+> [!quote|{{annotationColor(a.color)}}] {{a.annotatedText}} {%- if a.comment %}
+> 
+> **Comment:** {{a.comment}} {%- endif %} [Page {{a.page}}](https://claude.ai/chat/%7B%7Ba.desktopURI%7D%7D)
+
+{%- elif a.type == "text" %}
+
+> [!note] {{a.comment}} [Page {{a.page}}](https://claude.ai/chat/%7B%7Ba.desktopURI%7D%7D)
+
+{%- endif %} {% endfor %}
+
+{% endif %} {% endpersist %}
 ```
 
 In Zotero Integration settings, click **Add Import Format** and set the template path to this file.
